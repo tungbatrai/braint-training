@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
       entrypoint: './backend/worker.ts',
       compatibilityDate: '2026-11-09',
       compatibilityFlags: ['nodejs_compat'],
+      previewUrls: false,
       env: {
         DB: bindings.d1({ name: 'brain-training' }),
         APP_ORIGIN: bindings.text(originList.join(',')),

@@ -1,0 +1,14 @@
+PRAGMA foreign_keys = ON;
+CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'USER' CHECK(role IN ('USER','ADMIN')), status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','DISABLED')), created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS auth_sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), csrf TEXT NOT NULL, expires_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS auth_attempts (id TEXT PRIMARY KEY, bucket TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS auth_attempts_bucket ON auth_attempts(bucket,created_at);
+CREATE TABLE IF NOT EXISTS exercises (code TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)));
+INSERT OR IGNORE INTO exercises VALUES ('math','Tính nhẩm','Rèn luyện khả năng tính toán với 10 câu hỏi.',1),('memory','Trí nhớ','Ghi nhớ 6 từ và trả lời câu hỏi.',1);
+CREATE TABLE IF NOT EXISTS training_sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), exercise_code TEXT NOT NULL REFERENCES exercises(code), status TEXT NOT NULL CHECK(status IN ('IN_PROGRESS','SUBMITTED','COMPLETED','EXPIRED','ABANDONED')), state TEXT NOT NULL, score INTEGER, max_score INTEGER NOT NULL CHECK(max_score > 0), started_at TEXT NOT NULL, completed_at TEXT, version INTEGER NOT NULL DEFAULT 0, CHECK(score IS NULL OR (score >= 0 AND score <= max_score)));
+CREATE UNIQUE INDEX IF NOT EXISTS one_active_exercise ON training_sessions(user_id,exercise_code) WHERE status IN ('IN_PROGRESS','SUBMITTED');
+CREATE INDEX IF NOT EXISTS training_user_completed ON training_sessions(user_id,completed_at);
+CREATE TABLE IF NOT EXISTS cycles (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), start_date TEXT NOT NULL, target_days INTEGER NOT NULL, active INTEGER NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS one_active_cycle ON cycles(user_id) WHERE active=1;
+CREATE TABLE IF NOT EXISTS request_keys (user_id TEXT NOT NULL, key TEXT NOT NULL, fingerprint TEXT NOT NULL, response TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id,key));
+CREATE TABLE IF NOT EXISTS audit_logs (id TEXT PRIMARY KEY, actor_id TEXT NOT NULL REFERENCES users(id), action TEXT NOT NULL, target_id TEXT NOT NULL, detail TEXT NOT NULL, created_at TEXT NOT NULL);

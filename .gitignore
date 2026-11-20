@@ -15,3 +15,6 @@ playwright-report/
 *.sqlite
 *.sqlite-*
 artifacts/
+
+.vercel
+.env*
